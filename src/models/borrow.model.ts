@@ -6,9 +6,9 @@ const borrowSchema = new mongoose.Schema({
   dueDate: { type: Date, required: true }
 }, { timestamps: true });
 
-// ✅ Mongoose post middleware example: log after borrowing
+//mongoose post middleware example: log after borrowing
 borrowSchema.post('save', function (doc) {
-  console.log(`📚 Borrow record created for book ID: ${doc.book} with quantity ${doc.quantity}`);
+  console.log(` Borrow record created for book ID: ${doc.book} with quantity ${doc.quantity}`);
 });
 
 const Borrow = mongoose.model('Borrow', borrowSchema);
