@@ -46,7 +46,7 @@ const bookSchema = new mongoose_1.Schema({
 bookSchema.methods.updateAvailability = function () {
     this.available = this.copies > 0;
 };
-// ✅ Mongoose pre middleware to auto-update availability before save
+// mongoose pre middleware to auto-update availability before save
 bookSchema.pre('save', function (next) {
     this.available = this.copies > 0;
     next();

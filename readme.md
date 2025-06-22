@@ -25,7 +25,22 @@ A RESTful API for managing books and borrowing activities in a library system, b
 
 ## Folder Structure
 
-<pre> ```bash src/ ├── controllers/ │ ├── book.controller.ts │ └── borrow.controller.ts ├── models/ │ ├── book.model.ts │ └── borrow.model.ts ├── routes/ │ ├── book.route.ts │ └── borrow.route.ts ├── app.ts └── server.ts .env tsconfig.json package.json ``` </pre>
+src/
+├── controllers/
+│   ├── book.controller.ts
+│   └── borrow.controller.ts
+├── models/
+│   ├── book.model.ts
+│   └── borrow.model.ts
+├── routes/
+│   ├── book.route.ts
+│   └── borrow.route.ts
+├── app.ts
+└── server.ts
+.env
+tsconfig.json
+package.json
+
 ---
 
 ## Getting Started

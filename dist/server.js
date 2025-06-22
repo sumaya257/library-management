@@ -10,7 +10,7 @@ dotenv_1.default.config();
 const port = process.env.PORT || 5000;
 mongoose_1.default.connect(process.env.MONGO_URI)
     .then(() => {
-    console.log('✅ MongoDB connected successfully');
-    app_1.default.listen(port, () => console.log(`✅ Server is running on http://localhost:${port}`));
+    console.log('MongoDB connected successfully');
+    app_1.default.listen(port, () => console.log(`Server is running on http://localhost:${port}`));
 })
-    .catch(err => console.error('❌ DB connection failed:', err));
+    .catch(err => console.error('DB connection failed:', err));
