@@ -25,22 +25,7 @@ A RESTful API for managing books and borrowing activities in a library system, b
 
 ## Folder Structure
 
-src/
-├── controllers/
-│ ├── book.controller.ts
-│ └── borrow.controller.ts
-├── models/
-│ ├── book.model.ts
-│ └── borrow.model.ts
-├── routes/
-│ ├── book.route.ts
-│ └── borrow.route.ts
-├── app.ts
-└── server.ts
-.env
-tsconfig.json
-package.json
-
+<pre> ```bash src/ ├── controllers/ │ ├── book.controller.ts │ └── borrow.controller.ts ├── models/ │ ├── book.model.ts │ └── borrow.model.ts ├── routes/ │ ├── book.route.ts │ └── borrow.route.ts ├── app.ts └── server.ts .env tsconfig.json package.json ``` </pre>
 ---
 
 ## Getting Started
@@ -55,7 +40,7 @@ package.json
 1. Clone the repository
 
 ```bash
-git clone https://github.com/yourusername/library-management-api.git
+git clone https://github.com/sumaya257/library-management.git
 cd library-management-api
 Install dependencies
 
@@ -89,6 +74,4 @@ All API responses include a consistent JSON structure with success status, messa
 Scripts
 npm run dev — Run the server in development mode with hot reload
 
-npm run build — Compile TypeScript to JavaScript
-
-npm start — Run the compiled JavaScript server
+tsc — Compile TypeScript to JavaScript

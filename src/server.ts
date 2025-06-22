@@ -10,4 +10,4 @@ mongoose.connect(process.env.MONGO_URI as string)
     console.log('MongoDB connected successfully');
     app.listen(port, () => console.log(`Server is running on http://localhost:${port}`));
   })
-  .catch(err => console.error('❌ DB connection failed:', err));
+  .catch(err => console.error('DB connection failed:', err));
