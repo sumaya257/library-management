@@ -13,4 +13,14 @@ app.get('/', (_req, res) => {
 });
 app.use('/api', book_route_1.default);
 app.use('/api', borrow_route_1.default);
+app.use((req, res) => {
+    res.status(404).json({
+        success: false,
+        message: 'Route not found',
+        error: {
+            method: req.method,
+            path: req.originalUrl,
+        },
+    });
+});
 exports.default = app;
