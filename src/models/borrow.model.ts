@@ -1,15 +1,15 @@
-import mongoose from 'mongoose';
+import mongoose, { Document, Schema } from 'mongoose';
 
-const borrowSchema = new mongoose.Schema({
-  book: { type: mongoose.Schema.Types.ObjectId, ref: 'Book', required: true },
-  quantity: { type: Number, required: true, min: 1 },
-  dueDate: { type: Date, required: true }
-}, { timestamps: true });
+export interface IBorrow extends Document {
+  book: mongoose.Types.ObjectId;
+  quantity: number;
+  dueDate: Date;
+}
 
-//mongoose post middleware example: log after borrowing
-borrowSchema.post('save', function (doc) {
-  console.log(` Borrow record created for book ID: ${doc.book} with quantity ${doc.quantity}`);
+const borrowSchema = new Schema<IBorrow>({
+  book: { type: Schema.Types.ObjectId, ref: 'Book', required: true },
+  quantity: { type: Number, required: true },
+  dueDate: { type: Date, required: true },
 });
 
-const Borrow = mongoose.model('Borrow', borrowSchema);
-export default Borrow;
+export default mongoose.model<IBorrow>('Borrow', borrowSchema);

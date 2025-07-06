@@ -6,6 +6,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const borrow_controller_1 = require("../controllers/borrow.controller");
 const router = express_1.default.Router();
-router.post('/borrow', borrow_controller_1.borrowBook);
-router.get('/borrow', borrow_controller_1.borrowSummary);
+router.post('/', borrow_controller_1.createBorrow);
+router.get('/summary', borrow_controller_1.getBorrowSummary);
 exports.default = router;

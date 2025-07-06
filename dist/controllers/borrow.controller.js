@@ -12,54 +12,71 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.borrowSummary = exports.borrowBook = void 0;
-const book_model_1 = __importDefault(require("../models/book.model"));
+exports.getBorrowSummary = exports.createBorrow = void 0;
+const mongoose_1 = __importDefault(require("mongoose"));
 const borrow_model_1 = __importDefault(require("../models/borrow.model"));
-const handleError = (res, message, error, statusCode = 400) => {
-    return res.status(statusCode).json({ success: false, message, error });
-};
-const borrowBook = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { book: bookId, quantity, dueDate } = req.body;
+const book_model_1 = __importDefault(require("../models/book.model"));
+const createBorrow = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const session = yield mongoose_1.default.startSession();
+    session.startTransaction();
     try {
-        const book = yield book_model_1.default.findById(bookId);
-        if (!book || book.copies < quantity) {
-            return handleError(res, 'Not enough copies available', { bookId, quantity });
+        const { bookId, quantity, dueDate } = req.body;
+        // Step 1: Find the book inside the session
+        const book = yield book_model_1.default.findById(bookId).session(session);
+        if (!book) {
+            throw new Error('Book not found');
         }
+        // Step 2: Check if copies are enough
+        if (book.copies < quantity) {
+            throw new Error('Not enough copies available.');
+        }
+        // Step 3: Update book fields
         book.copies -= quantity;
-        book.updateAvailability();
-        yield book.save();
-        const borrow = yield borrow_model_1.default.create({ book: bookId, quantity, dueDate });
-        return res.status(201).json({ success: true, message: 'Book borrowed successfully', data: borrow });
+        book.available = book.copies > 0;
+        yield book.save({ session });
+        // Step 4: Create borrow entry
+        const borrow = new borrow_model_1.default({ book: bookId, quantity, dueDate });
+        yield borrow.save({ session });
+        // Step 5: Commit transaction
+        yield session.commitTransaction();
+        session.endSession();
+        res.status(201).json({ success: true, borrow });
     }
     catch (error) {
-        return handleError(res, 'Borrowing failed', error);
+        yield session.abortTransaction();
+        session.endSession();
+        res.status(500).json({
+            success: false,
+            message: error.message,
+        });
     }
 });
-exports.borrowBook = borrowBook;
-const borrowSummary = (_req, res) => __awaiter(void 0, void 0, void 0, function* () {
+exports.createBorrow = createBorrow;
+const getBorrowSummary = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const data = yield borrow_model_1.default.aggregate([
+        const summary = yield borrow_model_1.default.aggregate([
             { $group: { _id: '$book', totalQuantity: { $sum: '$quantity' } } },
             {
                 $lookup: {
                     from: 'books',
                     localField: '_id',
                     foreignField: '_id',
-                    as: 'bookInfo'
-                }
+                    as: 'bookInfo',
+                },
             },
             { $unwind: '$bookInfo' },
             {
                 $project: {
-                    book: { title: '$bookInfo.title', isbn: '$bookInfo.isbn' },
-                    totalQuantity: 1
-                }
-            }
+                    title: '$bookInfo.title',
+                    isbn: '$bookInfo.isbn',
+                    totalQuantity: 1,
+                },
+            },
         ]);
-        return res.json({ success: true, message: 'Borrowed books summary retrieved successfully', data });
+        res.json(summary);
     }
     catch (error) {
-        return handleError(res, 'Aggregation failed', error, 500);
+        next(error);
     }
 });
-exports.borrowSummary = borrowSummary;
+exports.getBorrowSummary = getBorrowSummary;

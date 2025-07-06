@@ -12,70 +12,68 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteBook = exports.updateBook = exports.getBookById = exports.getAllBooks = exports.createBook = void 0;
+exports.deleteBook = exports.updateBook = exports.createBook = exports.getBook = exports.getBooks = void 0;
 const book_model_1 = __importDefault(require("../models/book.model"));
-const handleError = (res, message, error, statusCode = 400) => {
-    return res.status(statusCode).json({ success: false, message, error });
-};
-const createBook = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getBooks = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const book = yield book_model_1.default.create(req.body);
-        return res.status(201).json({ success: true, message: 'Book created successfully', data: book });
+        const books = yield book_model_1.default.find();
+        res.json(books);
     }
     catch (error) {
-        return handleError(res, 'Validation failed', error);
+        next(error);
+    }
+});
+exports.getBooks = getBooks;
+const getBook = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const book = yield book_model_1.default.findById(req.params.id);
+        if (!book) {
+            res.status(404);
+            throw new Error('Book not found');
+        }
+        res.json(book);
+    }
+    catch (error) {
+        next(error);
+    }
+});
+exports.getBook = getBook;
+const createBook = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const book = new book_model_1.default(req.body);
+        yield book.save();
+        res.status(201).json(book);
+    }
+    catch (error) {
+        next(error);
     }
 });
 exports.createBook = createBook;
-const getAllBooks = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { filter, sortBy = 'createdAt', sort = 'desc', limit = '10' } = req.query;
-    const query = {};
-    if (filter)
-        query.genre = filter;
+const updateBook = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const books = yield book_model_1.default.find(query)
-            .sort({ [sortBy]: sort === 'asc' ? 1 : -1 })
-            .limit(Number(limit));
-        return res.json({ success: true, message: 'Books retrieved successfully', data: books });
+        const updated = yield book_model_1.default.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        if (!updated) {
+            res.status(404);
+            throw new Error('Book not found');
+        }
+        res.json(updated);
     }
     catch (error) {
-        return handleError(res, 'Failed to retrieve books', error, 500);
-    }
-});
-exports.getAllBooks = getAllBooks;
-const getBookById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const book = yield book_model_1.default.findById(req.params.bookId);
-        if (!book)
-            return handleError(res, 'Book not found', { bookId: req.params.bookId }, 404);
-        return res.json({ success: true, message: 'Book retrieved successfully', data: book });
-    }
-    catch (error) {
-        return handleError(res, 'Failed to retrieve book', error, 404);
-    }
-});
-exports.getBookById = getBookById;
-const updateBook = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const book = yield book_model_1.default.findByIdAndUpdate(req.params.bookId, req.body, { new: true });
-        if (!book)
-            return handleError(res, 'Book not found', { bookId: req.params.bookId }, 404);
-        return res.json({ success: true, message: 'Book updated successfully', data: book });
-    }
-    catch (error) {
-        return handleError(res, 'Failed to update book', error);
+        next(error);
     }
 });
 exports.updateBook = updateBook;
-const deleteBook = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const deleteBook = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const book = yield book_model_1.default.findByIdAndDelete(req.params.bookId);
-        if (!book)
-            return handleError(res, 'Book not found', { bookId: req.params.bookId }, 404);
-        return res.json({ success: true, message: 'Book deleted successfully', data: null });
+        const deleted = yield book_model_1.default.findByIdAndDelete(req.params.id);
+        if (!deleted) {
+            res.status(404);
+            throw new Error('Book not found');
+        }
+        res.json({ message: 'Book deleted' });
     }
     catch (error) {
-        return handleError(res, 'Failed to delete book', error);
+        next(error);
     }
 });
 exports.deleteBook = deleteBook;

@@ -1,60 +1,60 @@
-import { RequestHandler } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import Book from '../models/book.model';
 
-const handleError = (res: any, message: string, error: any, statusCode = 400) => {
-  return res.status(statusCode).json({ success: false, message, error });
-};
-
-export const createBook: RequestHandler = async (req, res) => {
+export const getBooks = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const book = await Book.create(req.body);
-    return res.status(201).json({ success: true, message: 'Book created successfully', data: book });
+    const books = await Book.find();
+    res.json(books);
   } catch (error) {
-    return handleError(res, 'Validation failed', error);
+    next(error);
   }
 };
 
-export const getAllBooks: RequestHandler = async (req, res) => {
-  const { filter, sortBy = 'createdAt', sort = 'desc', limit = '10' } = req.query;
-  const query: any = {};
-  if (filter) query.genre = filter;
-
+export const getBook = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const books = await Book.find(query)
-      .sort({ [sortBy as string]: sort === 'asc' ? 1 : -1 })
-      .limit(Number(limit));
-    return res.json({ success: true, message: 'Books retrieved successfully', data: books });
+    const book = await Book.findById(req.params.id);
+    if (!book) {
+      res.status(404);
+      throw new Error('Book not found');
+    }
+    res.json(book);
   } catch (error) {
-    return handleError(res, 'Failed to retrieve books', error, 500);
+    next(error);
   }
 };
 
-export const getBookById: RequestHandler = async (req, res) => {
+export const createBook = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const book = await Book.findById(req.params.bookId);
-    if (!book) return handleError(res, 'Book not found', { bookId: req.params.bookId }, 404);
-    return res.json({ success: true, message: 'Book retrieved successfully', data: book });
+    const book = new Book(req.body);
+    await book.save();
+    res.status(201).json(book);
   } catch (error) {
-    return handleError(res, 'Failed to retrieve book', error, 404);
+    next(error);
   }
 };
 
-export const updateBook: RequestHandler = async (req, res) => {
+export const updateBook = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const book = await Book.findByIdAndUpdate(req.params.bookId, req.body, { new: true });
-    if (!book) return handleError(res, 'Book not found', { bookId: req.params.bookId }, 404);
-    return res.json({ success: true, message: 'Book updated successfully', data: book });
+    const updated = await Book.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!updated) {
+      res.status(404);
+      throw new Error('Book not found');
+    }
+    res.json(updated);
   } catch (error) {
-    return handleError(res, 'Failed to update book', error);
+    next(error);
   }
 };
 
-export const deleteBook: RequestHandler = async (req, res) => {
+export const deleteBook = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const book = await Book.findByIdAndDelete(req.params.bookId);
-    if (!book) return handleError(res, 'Book not found', { bookId: req.params.bookId }, 404);
-    return res.json({ success: true, message: 'Book deleted successfully', data: null });
+    const deleted = await Book.findByIdAndDelete(req.params.id);
+    if (!deleted) {
+      res.status(404);
+      throw new Error('Book not found');
+    }
+    res.json({ message: 'Book deleted' });
   } catch (error) {
-    return handleError(res, 'Failed to delete book', error);
+    next(error);
   }
 };

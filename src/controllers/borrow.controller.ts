@@ -1,53 +1,74 @@
-import { RequestHandler } from 'express';
-import Book from '../models/book.model';
+import mongoose from 'mongoose';
+import { Request, Response, NextFunction } from 'express';
 import Borrow from '../models/borrow.model';
+import Book from '../models/book.model';
 
-const handleError = (res: any, message: string, error: any, statusCode = 400) => {
-  return res.status(statusCode).json({ success: false, message, error });
-};
-
-export const borrowBook: RequestHandler = async (req, res) => {
-  const { book: bookId, quantity, dueDate } = req.body;
+export const createBorrow = async (req: Request, res: Response, next: NextFunction) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
   try {
-    const book = await Book.findById(bookId);
-    if (!book || book.copies < quantity) {
-      return handleError(res, 'Not enough copies available', { bookId, quantity });
+    const { bookId, quantity, dueDate } = req.body;
+
+    // Step 1: Find the book inside the session
+    const book = await Book.findById(bookId).session(session);
+    if (!book) {
+      throw new Error('Book not found');
     }
 
-    book.copies -= quantity;
-    book.updateAvailability();
-    await book.save();
+    // Step 2: Check if copies are enough
+    if (book.copies < quantity) {
+      throw new Error('Not enough copies available.');
+    }
 
-    const borrow = await Borrow.create({ book: bookId, quantity, dueDate });
-    return res.status(201).json({ success: true, message: 'Book borrowed successfully', data: borrow });
+    // Step 3: Update book fields
+    book.copies -= quantity;
+    book.available = book.copies > 0;
+    await book.save({ session });
+
+    // Step 4: Create borrow entry
+    const borrow = new Borrow({ book: bookId, quantity, dueDate });
+    await borrow.save({ session });
+
+    // Step 5: Commit transaction
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(201).json({ success: true, borrow });
   } catch (error) {
-    return handleError(res, 'Borrowing failed', error);
+    await session.abortTransaction();
+    session.endSession();
+
+    res.status(500).json({
+      success: false,
+      message: (error as Error).message,
+    });
   }
 };
 
-export const borrowSummary: RequestHandler = async (_req, res) => {
+export const getBorrowSummary = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const data = await Borrow.aggregate([
+    const summary = await Borrow.aggregate([
       { $group: { _id: '$book', totalQuantity: { $sum: '$quantity' } } },
       {
         $lookup: {
           from: 'books',
           localField: '_id',
           foreignField: '_id',
-          as: 'bookInfo'
-        }
+          as: 'bookInfo',
+        },
       },
       { $unwind: '$bookInfo' },
       {
         $project: {
-          book: { title: '$bookInfo.title', isbn: '$bookInfo.isbn' },
-          totalQuantity: 1
-        }
-      }
+          title: '$bookInfo.title',
+          isbn: '$bookInfo.isbn',
+          totalQuantity: 1,
+        },
+      },
     ]);
-    return res.json({ success: true, message: 'Borrowed books summary retrieved successfully', data });
+    res.json(summary);
   } catch (error) {
-    return handleError(res, 'Aggregation failed', error, 500);
+    next(error);
   }
 };
